@@ -44,10 +44,10 @@
         </div>
       </div>
 
-      <!-- Caption status message below input box (Set to Black) -->
+      <!-- Status Message -->
       <div id="status" class="text-xs text-center min-h-[1rem] text-black font-semibold"></div>
 
-      <!-- Action Button (Restored Original Gradient) -->
+      <!-- Action Button -->
       <button 
         type="submit" 
         id="dlBtn"
@@ -55,6 +55,19 @@
         <i class="fa-solid fa-download text-sm"></i>
         <span>Download Video</span>
       </button>
+
+      <!-- Direct Fallback Download Button (shows only if auto-download is blocked) -->
+      <div id="fallbackContainer" class="hidden pt-2">
+        <a 
+          id="fallbackLink" 
+          href="#" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
+          <i class="fa-solid fa-circle-down"></i>
+          <span>Save MP4 to Device</span>
+        </a>
+      </div>
     </form>
   </div>
 
@@ -62,17 +75,18 @@
     function checkPlatform(url) {
       const badge = document.getElementById('badge');
       const status = document.getElementById('status');
+      const fallback = document.getElementById('fallbackContainer');
+
+      fallback.classList.add('hidden');
 
       const isYt = /youtube\.com|youtu\.be/.test(url);
       const isFb = /facebook\.com|fb\.watch/.test(url);
 
       if (isYt) {
-        // Original YouTube Red
         badge.innerHTML = '<i class="fa-brands fa-youtube text-red-500 text-lg"></i>';
         status.textContent = "YouTube clip detected";
         status.className = "text-xs text-center text-black font-semibold";
       } else if (isFb) {
-        // Original Facebook Blue
         badge.innerHTML = '<i class="fa-brands fa-facebook text-blue-600 text-lg"></i>';
         status.textContent = "Facebook clip detected";
         status.className = "text-xs text-center text-black font-semibold";
@@ -86,22 +100,78 @@
       }
     }
 
-    function handleDownload(e) {
+    async function handleDownload(e) {
       e.preventDefault();
       const rawUrl = document.getElementById('videoUrl').value.trim();
       const status = document.getElementById('status');
+      const btn = document.getElementById('dlBtn');
+      const fallback = document.getElementById('fallbackContainer');
+      const fallbackLink = document.getElementById('fallbackLink');
 
       if (!rawUrl) return;
 
-      status.textContent = "Processing video stream...";
+      btn.disabled = true;
+      btn.classList.add('opacity-70', 'cursor-not-allowed');
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Fetching Stream...`;
+      status.textContent = "Processing video file...";
       status.className = "text-xs text-center text-black font-semibold";
+      fallback.classList.add('hidden');
 
-      if (/youtube\.com|youtu\.be/.test(rawUrl)) {
-        window.location.href = `https://loader.to/api/button/?url=${encodeURIComponent(rawUrl)}&f=mp4`;
-      } else if (/facebook\.com|fb\.watch/.test(rawUrl)) {
-        window.location.href = `https://fdown.net/download.php?URL=${encodeURIComponent(rawUrl)}`;
-      } else {
-        alert("Please enter a valid YouTube or Facebook URL.");
+      try {
+        // Fetch stream directly from Cobalt API
+        const response = await fetch('https://api.cobalt.tools/', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url: rawUrl,
+            videoQuality: '720'
+          })
+        });
+
+        const data = await response.json();
+
+        if (data && data.url) {
+          status.textContent = "Starting download...";
+
+          // Programmatically trigger download
+          const a = document.createElement('a');
+          a.href = data.url;
+          a.setAttribute('download', '');
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+
+          // Also populate fallback button in case mobile browser blocks programmatic click
+          fallbackLink.href = data.url;
+          fallback.classList.remove('hidden');
+        } else {
+          throw new Error("Failed to parse video URL");
+        }
+      } catch (err) {
+        status.textContent = "Extraction failed. Retrying alternate engine...";
+        
+        // Secondary fallback
+        try {
+          const altRes = await fetch(`https://api.y2mate.is/v1/analyze?url=${encodeURIComponent(rawUrl)}`);
+          const altData = await altRes.json();
+          if (altData && altData.formats && altData.formats.video) {
+            const streamUrl = altData.formats.video[0].url;
+            status.textContent = "Ready! Tap green button below to save.";
+            fallbackLink.href = streamUrl;
+            fallback.classList.remove('hidden');
+          } else {
+            throw new Error();
+          }
+        } catch(e) {
+          status.textContent = "Error downloading video. Check URL and try again.";
+        }
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-70', 'cursor-not-allowed');
+        btn.innerHTML = `<i class="fa-solid fa-download text-sm"></i> Download Video`;
       }
     }
   </script>
