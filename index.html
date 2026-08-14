@@ -56,20 +56,12 @@
         <span>Download Video</span>
       </button>
     </form>
-
-    <!-- Embedded Downloader Frame (Triggers inside ClipVault UI) -->
-    <div id="downloaderFrameContainer" class="hidden rounded-2xl overflow-hidden border border-slate-200 shadow-sm mt-4">
-      <iframe id="downloaderFrame" class="w-full h-[180px] border-0" scrolling="no"></iframe>
-    </div>
   </div>
 
   <script>
     function checkPlatform(url) {
       const badge = document.getElementById('badge');
       const status = document.getElementById('status');
-      const container = document.getElementById('downloaderFrameContainer');
-
-      container.classList.add('hidden');
 
       const isYt = /youtube\.com|youtu\.be/.test(url);
       const isFb = /facebook\.com|fb\.watch/.test(url);
@@ -96,18 +88,14 @@
       e.preventDefault();
       const rawUrl = document.getElementById('videoUrl').value.trim();
       const status = document.getElementById('status');
-      const container = document.getElementById('downloaderFrameContainer');
-      const iframe = document.getElementById('downloaderFrame');
 
       if (!rawUrl) return;
 
-      status.textContent = "Generating download button...";
+      status.textContent = "Opening media stream...";
 
       if (/youtube\.com|youtu\.be/.test(rawUrl)) {
-        // Uses the Y2Mate button widget generator embedded directly in the card
-        iframe.src = `https://y2mate.is/embed?url=${encodeURIComponent(rawUrl)}`;
-        container.classList.remove('hidden');
-        status.textContent = "Tap the MP4 download button generated below:";
+        // Direct reliable extractor redirect
+        window.location.href = `https://ssyoutube.com/en1/shorts-downloader?url=${encodeURIComponent(rawUrl)}`;
       } else if (/facebook\.com|fb\.watch/.test(rawUrl)) {
         window.location.href = `https://fdown.net/download.php?URL=${encodeURIComponent(rawUrl)}`;
       } else {
