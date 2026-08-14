@@ -44,7 +44,7 @@
         </div>
       </div>
 
-      <!-- Status Message -->
+      <!-- Caption Status Message -->
       <div id="status" class="text-xs text-center min-h-[1rem] text-black font-semibold"></div>
 
       <!-- Action Button -->
@@ -55,29 +55,21 @@
         <i class="fa-solid fa-download text-sm"></i>
         <span>Download Video</span>
       </button>
-
-      <!-- Dynamic Download Result Box -->
-      <div id="downloadBox" class="hidden pt-2 space-y-2">
-        <a 
-          id="directDownloadBtn" 
-          href="#" 
-          target="_blank"
-          download
-          class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
-          <i class="fa-solid fa-circle-down"></i>
-          <span>Save MP4 File</span>
-        </a>
-      </div>
     </form>
+
+    <!-- Embedded Downloader Frame (Triggers inside ClipVault UI) -->
+    <div id="downloaderFrameContainer" class="hidden rounded-2xl overflow-hidden border border-slate-200 shadow-sm mt-4">
+      <iframe id="downloaderFrame" class="w-full h-[180px] border-0" scrolling="no"></iframe>
+    </div>
   </div>
 
   <script>
     function checkPlatform(url) {
       const badge = document.getElementById('badge');
       const status = document.getElementById('status');
-      const downloadBox = document.getElementById('downloadBox');
+      const container = document.getElementById('downloaderFrameContainer');
 
-      downloadBox.classList.add('hidden');
+      container.classList.add('hidden');
 
       const isYt = /youtube\.com|youtu\.be/.test(url);
       const isFb = /facebook\.com|fb\.watch/.test(url);
@@ -100,77 +92,27 @@
       }
     }
 
-    function extractYtId(url) {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : null;
-    }
-
-    async function handleDownload(e) {
+    function handleDownload(e) {
       e.preventDefault();
       const rawUrl = document.getElementById('videoUrl').value.trim();
       const status = document.getElementById('status');
-      const btn = document.getElementById('dlBtn');
-      const downloadBox = document.getElementById('downloadBox');
-      const directDownloadBtn = document.getElementById('directDownloadBtn');
+      const container = document.getElementById('downloaderFrameContainer');
+      const iframe = document.getElementById('downloaderFrame');
 
       if (!rawUrl) return;
 
-      btn.disabled = true;
-      btn.classList.add('opacity-70', 'cursor-not-allowed');
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Extracting...`;
-      status.textContent = "Bypassing restrictions and extracting MP4...";
-      downloadBox.classList.add('hidden');
+      status.textContent = "Generating download button...";
 
-      const ytId = extractYtId(rawUrl);
-
-      if (ytId) {
-        // Strategy 1: Direct Invidious Media Stream extraction
-        const invidiousInstances = [
-          'https://inv.hostux.net',
-          'https://invidious.nerdvpn.de',
-          'https://yt.artemislena.eu'
-        ];
-
-        let streamFound = false;
-
-        for (const instance of invidiousInstances) {
-          try {
-            const res = await fetch(`${instance}/api/v1/videos/${ytId}`);
-            if (!res.ok) continue;
-            const data = await res.json();
-            
-            // Find highest quality MP4 stream
-            const format = data.formatStreams.reverse().find(f => f.container === 'mp4') || data.formatStreams[0];
-            
-            if (format && format.url) {
-              directDownloadBtn.href = format.url;
-              status.textContent = "Stream extracted successfully!";
-              downloadBox.classList.remove('hidden');
-              streamFound = true;
-              break;
-            }
-          } catch (err) {
-            console.log("Retrying next instance...");
-          }
-        }
-
-        if (!streamFound) {
-          // Strategy 2: Fallback redirect to fast downloader bridge
-          status.textContent = "Opening stream engine...";
-          window.location.href = `https://cobalt.tools/#${encodeURIComponent(rawUrl)}`;
-        }
+      if (/youtube\.com|youtu\.be/.test(rawUrl)) {
+        // Uses the Y2Mate button widget generator embedded directly in the card
+        iframe.src = `https://y2mate.is/embed?url=${encodeURIComponent(rawUrl)}`;
+        container.classList.remove('hidden');
+        status.textContent = "Tap the MP4 download button generated below:";
       } else if (/facebook\.com|fb\.watch/.test(rawUrl)) {
-        // Facebook Fallback
-        status.textContent = "Redirecting Facebook Stream...";
         window.location.href = `https://fdown.net/download.php?URL=${encodeURIComponent(rawUrl)}`;
       } else {
-        status.textContent = "Invalid video link provided.";
+        alert("Please enter a valid YouTube or Facebook URL.");
       }
-
-      btn.disabled = false;
-      btn.classList.remove('opacity-70', 'cursor-not-allowed');
-      btn.innerHTML = `<i class="fa-solid fa-download text-sm"></i> Download Video`;
     }
   </script>
 </body>
