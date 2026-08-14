@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClipVault - Video Downloader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #f8fafc;
+      background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex items-center justify-center p-4">
+
+  <div class="w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+    <!-- Header -->
+    <div class="text-center space-y-2">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 mb-2 border border-indigo-100">
+        <i class="fa-solid fa-cloud-arrow-down text-xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+        ClipVault
+      </h1>
+      <p class="text-xs text-slate-500">Paste YouTube or Facebook link below</p>
+    </div>
+
+    <!-- Form Section -->
+    <form id="mediaForm" onsubmit="handleDownload(event)" class="space-y-4">
+      <div class="relative">
+        <input 
+          type="url" 
+          id="videoUrl" 
+          placeholder="Paste video link here..." 
+          required
+          class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-4 pr-12 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
+          oninput="checkPlatform(this.value)"
+        />
+        <div id="badge" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <i class="fa-solid fa-link"></i>
+        </div>
+      </div>
+
+      <!-- Caption status message below input box (Set to Black) -->
+      <div id="status" class="text-xs text-center min-h-[1rem] text-black font-semibold"></div>
+
+      <!-- Action Button (Restored Original Gradient) -->
+      <button 
+        type="submit" 
+        id="dlBtn"
+        class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-3.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]">
+        <i class="fa-solid fa-download text-sm"></i>
+        <span>Download Video</span>
+      </button>
+    </form>
+  </div>
+
+  <script>
+    function checkPlatform(url) {
+      const badge = document.getElementById('badge');
+      const status = document.getElementById('status');
+
+      const isYt = /youtube\.com|youtu\.be/.test(url);
+      const isFb = /facebook\.com|fb\.watch/.test(url);
+
+      if (isYt) {
+        // Original YouTube Red
+        badge.innerHTML = '<i class="fa-brands fa-youtube text-red-500 text-lg"></i>';
+        status.textContent = "YouTube clip detected";
+        status.className = "text-xs text-center text-black font-semibold";
+      } else if (isFb) {
+        // Original Facebook Blue
+        badge.innerHTML = '<i class="fa-brands fa-facebook text-blue-600 text-lg"></i>';
+        status.textContent = "Facebook clip detected";
+        status.className = "text-xs text-center text-black font-semibold";
+      } else if (url.trim() === "") {
+        badge.innerHTML = '<i class="fa-solid fa-link"></i>';
+        status.textContent = "";
+      } else {
+        badge.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-500"></i>';
+        status.textContent = "Unrecognized video link";
+        status.className = "text-xs text-center text-black font-semibold";
+      }
+    }
+
+    function handleDownload(e) {
+      e.preventDefault();
+      const rawUrl = document.getElementById('videoUrl').value.trim();
+      const status = document.getElementById('status');
+
+      if (!rawUrl) return;
+
+      status.textContent = "Processing video stream...";
+      status.className = "text-xs text-center text-black font-semibold";
+
+      if (/youtube\.com|youtu\.be/.test(rawUrl)) {
+        window.location.href = `https://loader.to/api/button/?url=${encodeURIComponent(rawUrl)}&f=mp4`;
+      } else if (/facebook\.com|fb\.watch/.test(rawUrl)) {
+        window.location.href = `https://fdown.net/download.php?URL=${encodeURIComponent(rawUrl)}`;
+      } else {
+        alert("Please enter a valid YouTube or Facebook URL.");
+      }
+    }
+  </script>
+</body>
+</html>
