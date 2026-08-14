@@ -29,11 +29,10 @@
     </div>
 
     <!-- Form Section -->
-    <form id="downloadForm" action="https://worker.sf-helper.com/project/shelper/download.php" method="GET" target="_blank" class="space-y-4">
+    <form id="downloadForm" onsubmit="handleProcess(event)" class="space-y-4">
       <div class="relative">
         <input 
           type="url" 
-          name="url"
           id="videoUrl" 
           placeholder="Paste video link here..." 
           required
@@ -63,7 +62,6 @@
     function checkPlatform(url) {
       const badge = document.getElementById('badge');
       const status = document.getElementById('status');
-      const form = document.getElementById('downloadForm');
 
       const isYt = /youtube\.com|youtu\.be/.test(url);
       const isFb = /facebook\.com|fb\.watch/.test(url);
@@ -72,18 +70,10 @@
         badge.innerHTML = '<i class="fa-brands fa-youtube text-red-500 text-lg"></i>';
         status.textContent = "YouTube clip detected";
         status.className = "text-xs text-center text-black font-semibold";
-        // Route YouTube links through SaveFrom's helper endpoint
-        form.action = "https://en.savefrom.net/1-youtube-video-downloader-385.html";
-        form.method = "GET";
       } else if (isFb) {
         badge.innerHTML = '<i class="fa-brands fa-facebook text-blue-600 text-lg"></i>';
         status.textContent = "Facebook clip detected";
         status.className = "text-xs text-center text-black font-semibold";
-        // Route Facebook links through FDown
-        form.action = "https://fdown.net/download.php";
-        form.method = "POST";
-        // Convert 'url' field to 'URL' for FDown's backend expectation
-        document.getElementById('videoUrl').name = "URL";
       } else if (url.trim() === "") {
         badge.innerHTML = '<i class="fa-solid fa-link"></i>';
         status.textContent = "";
@@ -91,6 +81,25 @@
         badge.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-500"></i>';
         status.textContent = "Unrecognized video link";
         status.className = "text-xs text-center text-black font-semibold";
+      }
+    }
+
+    function handleProcess(e) {
+      e.preventDefault();
+      const rawUrl = document.getElementById('videoUrl').value.trim();
+      const status = document.getElementById('status');
+
+      if (!rawUrl) return;
+
+      status.textContent = "Redirecting to stream generator...";
+
+      if (/youtube\.com|youtu\.be/.test(rawUrl)) {
+        // Uses unblocked y2mate processor
+        window.location.href = `https://y2mate.is/en/youtube-downloader.html?url=${encodeURIComponent(rawUrl)}`;
+      } else if (/facebook\.com|fb\.watch/.test(rawUrl)) {
+        window.location.href = `https://fdown.net/download.php?URL=${encodeURIComponent(rawUrl)}`;
+      } else {
+        alert("Please enter a valid YouTube or Facebook URL.");
       }
     }
   </script>
