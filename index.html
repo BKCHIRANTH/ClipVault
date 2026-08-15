@@ -67,7 +67,8 @@
     </div>
 
     <script>
-        const VERCEL_BACKEND = "https://clip-vault-8639u8g70-clip-vault.vercel.app";
+        // Replace with your exact Vercel Production Domain (NO trailing slash / at the end)
+        const VERCEL_BACKEND = "https://clip-vault-bty8armxa-clip-vault.vercel.app";
 
         function checkPlatform(url) {
             const badge = document.getElementById('badge');
@@ -106,20 +107,21 @@
 
             btn.disabled = true;
             btn.classList.add('opacity-70', 'cursor-not-allowed');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Connecting...`;
-            status.textContent = "Processing link via serverless backend...";
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Extracting stream...`;
+            status.textContent = "Connecting to serverless backend...";
             resultContainer.classList.add('hidden');
 
             try {
-                const res = await fetch(`${VERCEL_BACKEND}/api/download?url=${encodeURIComponent(rawUrl)}`);
+                const targetApi = `${VERCEL_BACKEND}/api/download?url=${encodeURIComponent(rawUrl)}`;
+                const res = await fetch(targetApi);
                 const data = await res.json();
 
-                if (data.success && data.downloadUrl) {
-                    status.textContent = "Video stream ready!";
+                if (res.ok && data.success && data.downloadUrl) {
+                    status.textContent = "Video stream ready! Tap to save:";
                     downloadLink.href = data.downloadUrl;
                     resultContainer.classList.remove('hidden');
                 } else {
-                    status.textContent = data.error || "Failed to process video.";
+                    status.textContent = data.error || "Failed to parse video link.";
                 }
             } catch (err) {
                 status.textContent = "Error connecting to serverless backend.";
