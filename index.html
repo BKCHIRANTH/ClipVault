@@ -4,25 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clip Vault - Video Downloader</title>
-    <!-- Prevents Favicon 404 console error -->
     <link rel="icon" href="data:," />
-    <!-- Production Tailwind CSS (No console warning) -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="max-w-md w-full bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 p-6 text-center">
-        <!-- Header -->
         <div class="mb-6">
-            <h1 class="text-3xl font-extrabold text-indigo-400">
-                Clip Vault
-            </h1>
-            <p class="text-xs text-gray-400 mt-1">Download YouTube Shorts & Videos easily</p>
+            <h1 class="text-3xl font-extrabold text-indigo-400">Clip Vault</h1>
+            <p class="text-xs text-gray-400 mt-1">Fast YouTube Shorts & Video Downloader</p>
         </div>
 
-        <!-- Input Form -->
         <form onsubmit="handleDownload(event)" class="space-y-4">
             <div class="relative flex items-center">
                 <span id="badge" class="absolute left-3 text-gray-400">
@@ -43,18 +36,17 @@
             </button>
         </form>
 
-        <!-- Status Message -->
         <div id="status" class="mt-4 text-xs font-medium text-gray-400 min-h-[20px]"></div>
 
-        <!-- Backup Manual Download Button -->
-        <div id="resultContainer" class="mt-4 hidden">
+        <div id="resultContainer" class="mt-4 hidden space-y-3">
+            <div id="videoMeta" class="text-sm font-semibold text-indigo-300"></div>
             <a id="downloadLink"
                href="#"
                target="_blank"
                rel="noopener noreferrer"
                download="video.mp4"
                class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white text-xs font-semibold rounded-lg shadow transition-all">
-                <i class="fa-solid fa-file-arrow-down"></i> Click Here to Save MP4
+                <i class="fa-solid fa-file-arrow-down"></i> Click Here to Save Video (MP4)
             </a>
         </div>
     </div>
@@ -88,49 +80,67 @@
             const btn = document.getElementById('dlBtn');
             const resultContainer = document.getElementById('resultContainer');
             const downloadLink = document.getElementById('downloadLink');
+            const videoMeta = document.getElementById('videoMeta');
 
-            if (!videoInput) return;
             const rawUrl = videoInput.value.trim();
             if (!rawUrl) return;
 
-            // Loading State
             btn.disabled = true;
             btn.classList.add('opacity-70', 'cursor-not-allowed');
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
-            status.textContent = "Extracting direct video stream...";
+            status.textContent = "Extracting media stream...";
             resultContainer.classList.add('hidden');
 
-            try {
-                // Fetch stream exclusively from backend API (avoids client CORS blocks)
-                const response = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
-                const data = await response.json();
+            // Extract YouTube Video ID
+            const ytMatch = rawUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
+            const videoId = ytMatch ? ytMatch[1] : null;
 
-                if (response.ok && data.success && data.downloadUrl) {
-                    status.textContent = "Download starting...";
-
-                    // Update backup download button
-                    downloadLink.href = data.downloadUrl;
-                    resultContainer.classList.remove('hidden');
-
-                    // Trigger 1-Click Browser Download
-                    const tempLink = document.createElement('a');
-                    tempLink.href = data.downloadUrl;
-                    tempLink.target = '_blank';
-                    tempLink.rel = 'noopener noreferrer';
-                    tempLink.setAttribute('download', 'video.mp4');
-                    document.body.appendChild(tempLink);
-                    tempLink.click();
-                    tempLink.remove();
-
-                    status.textContent = "Download initiated!";
-                } else {
-                    status.textContent = data.error || "Extraction servers are busy. Please try again.";
-                }
-            } catch (err) {
-                status.textContent = "Network error connecting to backend server.";
+            if (!videoId) {
+                status.textContent = "Invalid YouTube URL.";
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                btn.innerHTML = `<i class="fa-solid fa-download"></i> Download Video`;
+                return;
             }
 
-            // Reset Button State
+            try {
+                // We query reliable public APIs directly
+                const res = await fetch(`https://api.cobalt.tools`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: `https://www.youtube.com/watch?v=${videoId}`,
+                        videoQuality: '720'
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data && (data.url || (data.picker && data.picker[0]))) {
+                    const downloadUrl = data.url || data.picker[0].url;
+
+                    status.textContent = "Video ready!";
+                    downloadLink.href = downloadUrl;
+                    videoMeta.textContent = "Click below to save your file:";
+                    resultContainer.classList.remove('hidden');
+
+                    // Auto-trigger download tab
+                    window.open(downloadUrl, '_blank');
+                } else {
+                    // Fallback redirect method if API blocks IP
+                    status.textContent = "Opening stream viewer...";
+                    const fallbackUrl = `https://yewtu.be/watch?v=${videoId}`;
+                    window.open(fallbackUrl, '_blank');
+                }
+            } catch (err) {
+                // Browser CORS fallback: Open direct video player
+                status.textContent = "Opening video stream directly...";
+                window.open(`https://yewtu.be/watch?v=${videoId}`, '_blank');
+            }
+
             btn.disabled = false;
             btn.classList.remove('opacity-70', 'cursor-not-allowed');
             btn.innerHTML = `<i class="fa-solid fa-download"></i> Download Video`;
