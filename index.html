@@ -95,50 +95,37 @@
             }
         }
 
-        async function handleDownload(e) {
-            e.preventDefault();
-            const rawUrl = document.getElementById('videoUrl').value.trim();
-            const status = document.getElementById('status');
-            const btn = document.getElementById('dlBtn');
-            const resultContainer = document.getElementById('resultContainer');
-            const downloadLink = document.getElementById('downloadLink');
+        async function handleDownload(event) {
+            event.preventDefault();
 
-            if (!rawUrl) return;
+            const urlInput = document.getElementById('urlInput').value;
+            const statusDiv = document.getElementById('status');
 
-            btn.disabled = true;
-            btn.classList.add('opacity-70', 'cursor-not-allowed');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Extracting stream...`;
-            status.textContent = "Connecting to backend...";
-            resultContainer.classList.add('hidden');
-
-            // Relative path call (same origin)
-            const targetApi = `/api/download?url=${encodeURIComponent(rawUrl)}`;
-
-            console.log("=== FRONTEND FETCH INIT ===");
-            console.log("Target API Endpoint:", targetApi);
+            statusDiv.innerText = 'Processing video...';
 
             try {
-                const res = await fetch(targetApi);
-                console.log("Response Status:", res.status);
+                const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
+                const data = await response.json();
 
-                const data = await res.json();
-                console.log("Payload:", data);
+                if (data.success && data.downloadUrl) {
+                    statusDiv.innerText = 'Download starting...';
 
-                if (res.ok && data.success && data.downloadUrl) {
-                    status.textContent = "Video stream ready! Tap below to save:";
-                    downloadLink.href = data.downloadUrl;
-                    resultContainer.classList.remove('hidden');
+                    // Direct 1-click download trigger
+                    const a = document.createElement('a');
+                    a.href = data.downloadUrl;
+                    a.download = 'video.mp4';
+                    a.target = '_blank';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+
+                    statusDiv.innerText = 'Download initiated!';
                 } else {
-                    status.textContent = data.error || `Server returned status ${res.status}`;
+                    statusDiv.innerText = data.error || 'Download failed.';
                 }
             } catch (err) {
-                console.error("Fetch failed:", err);
-                status.textContent = `Error connecting: ${err.message}`;
+                statusDiv.innerText = 'Network error. Please try again.';
             }
-
-            btn.disabled = false;
-            btn.classList.remove('opacity-70', 'cursor-not-allowed');
-            btn.innerHTML = `<i class="fa-solid fa-download text-sm"></i> Download Video`;
         }
     </script>
 </body>
