@@ -68,7 +68,7 @@
 
     <script>
         // Replace with your exact Vercel Production Domain (NO trailing slash / at the end)
-        const VERCEL_BACKEND = "https://clip-vault-bty8armxa-clip-vault.vercel.app";
+        const VERCEL_BACKEND = "";
 
         function checkPlatform(url) {
             const badge = document.getElementById('badge');
@@ -107,23 +107,22 @@
 
             btn.disabled = true;
             btn.classList.add('opacity-70', 'cursor-not-allowed');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Connecting...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Extracting stream...`;
             status.textContent = "Connecting to backend...";
             resultContainer.classList.add('hidden');
 
-            const targetApi = `${VERCEL_BACKEND}/api/download?url=${encodeURIComponent(rawUrl)}`;
+            // Relative path call (same origin)
+            const targetApi = `/api/download?url=${encodeURIComponent(rawUrl)}`;
 
             console.log("=== FRONTEND FETCH INIT ===");
             console.log("Target API Endpoint:", targetApi);
 
             try {
                 const res = await fetch(targetApi);
-                console.log("Response Received!");
-                console.log("HTTP Status Code:", res.status);
-                console.log("HTTP Status Text:", res.statusText);
+                console.log("Response Status:", res.status);
 
                 const data = await res.json();
-                console.log("JSON Payload Received:", data);
+                console.log("Payload:", data);
 
                 if (res.ok && data.success && data.downloadUrl) {
                     status.textContent = "Video stream ready! Tap below to save:";
@@ -133,10 +132,7 @@
                     status.textContent = data.error || `Server returned status ${res.status}`;
                 }
             } catch (err) {
-                console.error("=== FETCH FAILED AT NETWORK LEVEL ===");
-                console.error("Error Object:", err);
-                console.error("Error Name:", err.name);
-                console.error("Error Message:", err.message);
+                console.error("Fetch failed:", err);
                 status.textContent = `Error connecting: ${err.message}`;
             }
 
