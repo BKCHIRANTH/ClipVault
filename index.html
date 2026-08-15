@@ -1,28 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clip Vault - Video Downloader</title>
-    <link rel="icon" href="data:,">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Prevents Favicon 404 console error -->
+    <link rel="icon" href="data:," />
+    <!-- Production Tailwind CSS (No console warning) -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div class="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 p-6 text-center">
+    <div class="max-w-md w-full bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 p-6 text-center">
         <!-- Header -->
         <div class="mb-6">
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-500 bg-clip-text text-transparent">
+            <h1 class="text-3xl font-extrabold text-indigo-400">
                 Clip Vault
             </h1>
-            <p class="text-xs text-slate-400 mt-1">Download YouTube Shorts & Videos in 1-Click</p>
+            <p class="text-xs text-gray-400 mt-1">Download YouTube Shorts & Videos easily</p>
         </div>
 
         <!-- Input Form -->
         <form onsubmit="handleDownload(event)" class="space-y-4">
             <div class="relative flex items-center">
-                <span id="badge" class="absolute left-3 text-slate-400">
+                <span id="badge" class="absolute left-3 text-gray-400">
                     <i class="fa-solid fa-link"></i>
                 </span>
                 <input type="url"
@@ -30,28 +33,28 @@
                        oninput="checkPlatform(this.value)"
                        placeholder="Paste YouTube or Shorts URL here..."
                        required
-                       class="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-500" />
+                       class="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-sm text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors placeholder-gray-500" />
             </div>
 
             <button type="submit"
                     id="dlBtn"
-                    class="w-full py-3 bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 font-semibold rounded-xl text-sm transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
+                    class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2">
                 <i class="fa-solid fa-download"></i> Download Video
             </button>
         </form>
 
         <!-- Status Message -->
-        <div id="status" class="mt-4 text-xs font-medium text-slate-400 min-h-[20px]"></div>
+        <div id="status" class="mt-4 text-xs font-medium text-gray-400 min-h-[20px]"></div>
 
-        <!-- Backup Result Button -->
+        <!-- Backup Manual Download Button -->
         <div id="resultContainer" class="mt-4 hidden">
             <a id="downloadLink"
                href="#"
                target="_blank"
                rel="noopener noreferrer"
                download="video.mp4"
-               class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow transition-all">
-                <i class="fa-solid fa-file-arrow-down"></i> Click Here if Download Didn't Start
+               class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white text-xs font-semibold rounded-lg shadow transition-all">
+                <i class="fa-solid fa-file-arrow-down"></i> Click Here to Save MP4
             </a>
         </div>
     </div>
@@ -73,45 +76,8 @@
                 if (status) status.textContent = "";
             } else {
                 if (badge) badge.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-500"></i>';
-                if (status) status.textContent = "Unrecognized link";
+                if (status) status.textContent = "Unrecognized link format";
             }
-        }
-
-        // Direct client-side fetch using visitor's unblocked IP
-        async function extractFromClient(videoId) {
-            const pipedInstances = [
-                'https://pipedapi.kavin.rocks',
-                'https://api.piped.yt',
-                'https://pipedapi.tokhmi.xyz',
-                'https://pipedapi.privacy.com.de',
-                'https://pipedapi.adminforge.de'
-            ];
-
-            for (const instance of pipedInstances) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-                    const res = await fetch(`${instance}/streams/${videoId}`, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        const streams = data.videoStreams || [];
-
-                        const bestStream = streams.find(s => s.mimeType?.includes('mp4') && s.videoOnly === false && s.quality === '720p') ||
-                            streams.find(s => s.mimeType?.includes('mp4') && s.videoOnly === false) ||
-                            streams.find(s => s.videoOnly === false);
-
-                        if (bestStream && bestStream.url) {
-                            return bestStream.url;
-                        }
-                    }
-                } catch (e) {
-                    // Try next instance
-                }
-            }
-            return null;
         }
 
         async function handleDownload(e) {
@@ -127,59 +93,44 @@
             const rawUrl = videoInput.value.trim();
             if (!rawUrl) return;
 
+            // Loading State
             btn.disabled = true;
             btn.classList.add('opacity-70', 'cursor-not-allowed');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing video...`;
-            status.textContent = "Extracting video stream...";
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
+            status.textContent = "Extracting direct video stream...";
             resultContainer.classList.add('hidden');
 
-            const ytMatch = rawUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
-            const videoId = ytMatch ? ytMatch[1] : null;
+            try {
+                // Fetch stream exclusively from backend API (avoids client CORS blocks)
+                const response = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
+                const data = await response.json();
 
-            let streamUrl = null;
+                if (response.ok && data.success && data.downloadUrl) {
+                    status.textContent = "Download starting...";
 
-            // 1. Try Client-side direct extraction first (bypasses Vercel IP blocks)
-            if (videoId) {
-                streamUrl = await extractFromClient(videoId);
-            }
+                    // Update backup download button
+                    downloadLink.href = data.downloadUrl;
+                    resultContainer.classList.remove('hidden');
 
-            // 2. Fallback to Serverless API if client fetch fails
-            if (!streamUrl) {
-                try {
-                    status.textContent = "Checking backup server nodes...";
-                    const res = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
-                    const data = await res.json();
+                    // Trigger 1-Click Browser Download
+                    const tempLink = document.createElement('a');
+                    tempLink.href = data.downloadUrl;
+                    tempLink.target = '_blank';
+                    tempLink.rel = 'noopener noreferrer';
+                    tempLink.setAttribute('download', 'video.mp4');
+                    document.body.appendChild(tempLink);
+                    tempLink.click();
+                    tempLink.remove();
 
-                    if (data.success && (data.downloadUrl || data.url)) {
-                        streamUrl = data.downloadUrl || data.url;
-                    }
-                } catch (err) {
-                    // Fail silently and handle below
+                    status.textContent = "Download initiated!";
+                } else {
+                    status.textContent = data.error || "Extraction servers are busy. Please try again.";
                 }
+            } catch (err) {
+                status.textContent = "Network error connecting to backend server.";
             }
 
-            // Trigger download
-            if (streamUrl) {
-                status.textContent = "Starting download...";
-
-                downloadLink.href = streamUrl;
-                resultContainer.classList.remove('hidden');
-
-                // 1-Click Download Trigger
-                const tempLink = document.createElement('a');
-                tempLink.href = streamUrl;
-                tempLink.target = '_blank';
-                tempLink.rel = 'noopener noreferrer';
-                tempLink.setAttribute('download', 'video.mp4');
-                document.body.appendChild(tempLink);
-                tempLink.click();
-                tempLink.remove();
-
-                status.textContent = "Download initiated!";
-            } else {
-                status.textContent = "Unable to fetch video stream. Please try again in a few moments.";
-            }
-
+            // Reset Button State
             btn.disabled = false;
             btn.classList.remove('opacity-70', 'cursor-not-allowed');
             btn.innerHTML = `<i class="fa-solid fa-download"></i> Download Video`;
