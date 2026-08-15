@@ -67,65 +67,93 @@
     </div>
 
     <script>
-        // Replace with your exact Vercel Production Domain (NO trailing slash / at the end)
-        const VERCEL_BACKEND = "";
-
         function checkPlatform(url) {
             const badge = document.getElementById('badge');
             const status = document.getElementById('status');
-            document.getElementById('resultContainer').classList.add('hidden');
+            const resultContainer = document.getElementById('resultContainer');
+            if (resultContainer) resultContainer.classList.add('hidden');
 
             const isYt = /youtube\.com|youtu\.be/.test(url);
             const isFb = /facebook\.com|fb\.watch/.test(url);
 
             if (isYt) {
-                badge.innerHTML = '<i class="fa-brands fa-youtube text-red-500 text-lg"></i>';
-                status.textContent = "YouTube clip detected";
-                status.className = "text-xs text-center text-black font-semibold";
+                if (badge) badge.innerHTML = '<i class="fa-brands fa-youtube text-red-500 text-lg"></i>';
+                if (status) {
+                    status.textContent = "YouTube clip detected";
+                    status.className = "text-xs text-center text-black font-semibold";
+                }
             } else if (isFb) {
-                badge.innerHTML = '<i class="fa-brands fa-facebook text-blue-600 text-lg"></i>';
-                status.textContent = "Facebook clip detected";
-                status.className = "text-xs text-center text-black font-semibold";
+                if (badge) badge.innerHTML = '<i class="fa-brands fa-facebook text-blue-600 text-lg"></i>';
+                if (status) {
+                    status.textContent = "Facebook clip detected";
+                    status.className = "text-xs text-center text-black font-semibold";
+                }
             } else if (url.trim() === "") {
-                badge.innerHTML = '<i class="fa-solid fa-link"></i>';
-                status.textContent = "";
+                if (badge) badge.innerHTML = '<i class="fa-solid fa-link"></i>';
+                if (status) status.textContent = "";
             } else {
-                badge.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-500"></i>';
-                status.textContent = "Unrecognized link";
+                if (badge) badge.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-500"></i>';
+                if (status) status.textContent = "Unrecognized link";
             }
         }
 
-        async function handleDownload(event) {
-            event.preventDefault();
+        async function handleDownload(e) {
+            e.preventDefault();
 
-            const urlInput = document.getElementById('urlInput').value;
-            const statusDiv = document.getElementById('status');
+            // Correct IDs matching index.html elements
+            const videoInput = document.getElementById('videoUrl');
+            const status = document.getElementById('status');
+            const btn = document.getElementById('dlBtn');
+            const resultContainer = document.getElementById('resultContainer');
+            const downloadLink = document.getElementById('downloadLink');
 
-            statusDiv.innerText = 'Processing video...';
+            if (!videoInput) return;
+            const rawUrl = videoInput.value.trim();
+            if (!rawUrl) return;
+
+            // Loading state
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Processing video...`;
+            status.textContent = "Fetching video stream...";
+            resultContainer.classList.add('hidden');
 
             try {
-                const response = await fetch(`/api/download?url=${encodeURIComponent(urlInput)}`);
-                const data = await response.json();
+                const res = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
+                const data = await res.json();
 
-                if (data.success && data.downloadUrl) {
-                    statusDiv.innerText = 'Download starting...';
+                if (res.ok && (data.downloadUrl || data.url)) {
+                    const streamUrl = data.downloadUrl || data.url;
+                    status.textContent = "Starting download...";
 
-                    // Direct 1-click download trigger
-                    const a = document.createElement('a');
-                    a.href = data.downloadUrl;
-                    a.download = 'video.mp4';
-                    a.target = '_blank';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
+                    // 1. One-click automatic download trigger
+                    const tempLink = document.createElement('a');
+                    tempLink.href = streamUrl;
+                    tempLink.target = '_blank';
+                    tempLink.rel = 'noopener noreferrer';
+                    tempLink.setAttribute('download', 'video.mp4');
+                    document.body.appendChild(tempLink);
+                    tempLink.click();
+                    tempLink.remove();
 
-                    statusDiv.innerText = 'Download initiated!';
+                    // 2. Backup button in case mobile browser blocks popups
+                    if (downloadLink && resultContainer) {
+                        downloadLink.href = streamUrl;
+                        resultContainer.classList.remove('hidden');
+                    }
+
+                    status.textContent = "Download started!";
                 } else {
-                    statusDiv.innerText = data.error || 'Download failed.';
+                    status.textContent = data.error || "Failed to extract video stream.";
                 }
             } catch (err) {
-                statusDiv.innerText = 'Network error. Please try again.';
+                status.textContent = "Network error connecting to server.";
             }
+
+            // Reset button
+            btn.disabled = false;
+            btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            btn.innerHTML = `<i class="fa-solid fa-download text-sm"></i> Download Video`;
         }
     </script>
 </body>
