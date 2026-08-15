@@ -107,24 +107,37 @@
 
             btn.disabled = true;
             btn.classList.add('opacity-70', 'cursor-not-allowed');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Extracting stream...`;
-            status.textContent = "Connecting to serverless backend...";
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Connecting...`;
+            status.textContent = "Connecting to backend...";
             resultContainer.classList.add('hidden');
 
+            const targetApi = `${VERCEL_BACKEND}/api/download?url=${encodeURIComponent(rawUrl)}`;
+
+            console.log("=== FRONTEND FETCH INIT ===");
+            console.log("Target API Endpoint:", targetApi);
+
             try {
-                const targetApi = `${VERCEL_BACKEND}/api/download?url=${encodeURIComponent(rawUrl)}`;
                 const res = await fetch(targetApi);
+                console.log("Response Received!");
+                console.log("HTTP Status Code:", res.status);
+                console.log("HTTP Status Text:", res.statusText);
+
                 const data = await res.json();
+                console.log("JSON Payload Received:", data);
 
                 if (res.ok && data.success && data.downloadUrl) {
-                    status.textContent = "Video stream ready! Tap to save:";
+                    status.textContent = "Video stream ready! Tap below to save:";
                     downloadLink.href = data.downloadUrl;
                     resultContainer.classList.remove('hidden');
                 } else {
-                    status.textContent = data.error || "Failed to parse video link.";
+                    status.textContent = data.error || `Server returned status ${res.status}`;
                 }
             } catch (err) {
-                status.textContent = "Error connecting to serverless backend.";
+                console.error("=== FETCH FAILED AT NETWORK LEVEL ===");
+                console.error("Error Object:", err);
+                console.error("Error Name:", err.name);
+                console.error("Error Message:", err.message);
+                status.textContent = `Error connecting: ${err.message}`;
             }
 
             btn.disabled = false;
