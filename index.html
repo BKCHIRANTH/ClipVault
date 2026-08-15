@@ -3,68 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClipVault - Video Downloader</title>
+    <title>Clip Vault - Video Downloader</title>
+    <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f8fafc;
-            background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
-        }
-    </style>
-    <link rel="icon" href="data:,">
 </head>
-<body class="min-h-screen text-slate-800 flex items-center justify-center p-4">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div class="w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+    <div class="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 p-6 text-center">
         <!-- Header -->
-        <div class="text-center space-y-2">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 mb-2 border border-indigo-100">
-                <i class="fa-solid fa-cloud-arrow-down text-xl"></i>
-            </div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">
-                ClipVault
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-pink-500 bg-clip-text text-transparent">
+                Clip Vault
             </h1>
-            <p class="text-xs text-slate-500">Paste YouTube or Facebook link below</p>
+            <p class="text-xs text-slate-400 mt-1">Download YouTube Shorts & Videos in 1-Click</p>
         </div>
 
-        <!-- Form Section -->
-        <form id="mediaForm" onsubmit="handleDownload(event)" class="space-y-4">
-            <div class="relative">
+        <!-- Input Form -->
+        <form onsubmit="handleDownload(event)" class="space-y-4">
+            <div class="relative flex items-center">
+                <span id="badge" class="absolute left-3 text-slate-400">
+                    <i class="fa-solid fa-link"></i>
+                </span>
                 <input type="url"
                        id="videoUrl"
-                       placeholder="Paste video link here..."
+                       oninput="checkPlatform(this.value)"
+                       placeholder="Paste YouTube or Shorts URL here..."
                        required
-                       class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-4 pr-12 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
-                       oninput="checkPlatform(this.value)" />
-                <div id="badge" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    <i class="fa-solid fa-link"></i>
-                </div>
+                       class="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-500" />
             </div>
 
-            <!-- Caption Status Message -->
-            <div id="status" class="text-xs text-center min-h-[1rem] text-black font-semibold"></div>
-
-            <!-- Action Button -->
             <button type="submit"
                     id="dlBtn"
-                    class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-3.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]">
-                <i class="fa-solid fa-download text-sm"></i>
-                <span>Download Video</span>
+                    class="w-full py-3 bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 font-semibold rounded-xl text-sm transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-download"></i> Download Video
             </button>
-
-            <!-- Save Button Container -->
-            <div id="resultContainer" class="hidden pt-2">
-                <a id="downloadLink"
-                   href="#"
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
-                    <i class="fa-solid fa-circle-down text-base"></i>
-                    <span>Save MP4 File</span>
-                </a>
-            </div>
         </form>
+
+        <!-- Status Message -->
+        <div id="status" class="mt-4 text-xs font-medium text-slate-400 min-h-[20px]"></div>
+
+        <!-- Backup Result Button -->
+        <div id="resultContainer" class="mt-4 hidden">
+            <a id="downloadLink"
+               href="#"
+               target="_blank"
+               rel="noopener noreferrer"
+               download="video.mp4"
+               class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow transition-all">
+                <i class="fa-solid fa-file-arrow-down"></i> Click Here if Download Didn't Start
+            </a>
+        </div>
     </div>
 
     <script>
@@ -75,20 +64,10 @@
             if (resultContainer) resultContainer.classList.add('hidden');
 
             const isYt = /youtube\.com|youtu\.be/.test(url);
-            const isFb = /facebook\.com|fb\.watch/.test(url);
 
             if (isYt) {
                 if (badge) badge.innerHTML = '<i class="fa-brands fa-youtube text-red-500 text-lg"></i>';
-                if (status) {
-                    status.textContent = "YouTube clip detected";
-                    status.className = "text-xs text-center text-black font-semibold";
-                }
-            } else if (isFb) {
-                if (badge) badge.innerHTML = '<i class="fa-brands fa-facebook text-blue-600 text-lg"></i>';
-                if (status) {
-                    status.textContent = "Facebook clip detected";
-                    status.className = "text-xs text-center text-black font-semibold";
-                }
+                if (status) status.textContent = "YouTube clip detected";
             } else if (url.trim() === "") {
                 if (badge) badge.innerHTML = '<i class="fa-solid fa-link"></i>';
                 if (status) status.textContent = "";
@@ -98,10 +77,46 @@
             }
         }
 
+        // Direct client-side fetch using visitor's unblocked IP
+        async function extractFromClient(videoId) {
+            const pipedInstances = [
+                'https://pipedapi.kavin.rocks',
+                'https://api.piped.yt',
+                'https://pipedapi.tokhmi.xyz',
+                'https://pipedapi.privacy.com.de',
+                'https://pipedapi.adminforge.de'
+            ];
+
+            for (const instance of pipedInstances) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+                    const res = await fetch(`${instance}/streams/${videoId}`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        const streams = data.videoStreams || [];
+
+                        const bestStream = streams.find(s => s.mimeType?.includes('mp4') && s.videoOnly === false && s.quality === '720p') ||
+                            streams.find(s => s.mimeType?.includes('mp4') && s.videoOnly === false) ||
+                            streams.find(s => s.videoOnly === false);
+
+                        if (bestStream && bestStream.url) {
+                            return bestStream.url;
+                        }
+                    }
+                } catch (e) {
+                    // Try next instance
+                }
+            }
+            return null;
+        }
+
         async function handleDownload(e) {
             e.preventDefault();
 
-            // Correct IDs matching index.html elements
             const videoInput = document.getElementById('videoUrl');
             const status = document.getElementById('status');
             const btn = document.getElementById('dlBtn');
@@ -112,49 +127,62 @@
             const rawUrl = videoInput.value.trim();
             if (!rawUrl) return;
 
-            // Loading state
             btn.disabled = true;
             btn.classList.add('opacity-70', 'cursor-not-allowed');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Processing video...`;
-            status.textContent = "Fetching video stream...";
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing video...`;
+            status.textContent = "Extracting video stream...";
             resultContainer.classList.add('hidden');
 
-            try {
-                const res = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
-                const data = await res.json();
+            const ytMatch = rawUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
+            const videoId = ytMatch ? ytMatch[1] : null;
 
-                if (res.ok && (data.downloadUrl || data.url)) {
-                    const streamUrl = data.downloadUrl || data.url;
-                    status.textContent = "Starting download...";
+            let streamUrl = null;
 
-                    // 1. One-click automatic download trigger
-                    const tempLink = document.createElement('a');
-                    tempLink.href = streamUrl;
-                    tempLink.target = '_blank';
-                    tempLink.rel = 'noopener noreferrer';
-                    tempLink.setAttribute('download', 'video.mp4');
-                    document.body.appendChild(tempLink);
-                    tempLink.click();
-                    tempLink.remove();
-
-                    // 2. Backup button in case mobile browser blocks popups
-                    if (downloadLink && resultContainer) {
-                        downloadLink.href = streamUrl;
-                        resultContainer.classList.remove('hidden');
-                    }
-
-                    status.textContent = "Download started!";
-                } else {
-                    status.textContent = data.error || "Failed to extract video stream.";
-                }
-            } catch (err) {
-                status.textContent = "Network error connecting to server.";
+            // 1. Try Client-side direct extraction first (bypasses Vercel IP blocks)
+            if (videoId) {
+                streamUrl = await extractFromClient(videoId);
             }
 
-            // Reset button
+            // 2. Fallback to Serverless API if client fetch fails
+            if (!streamUrl) {
+                try {
+                    status.textContent = "Checking backup server nodes...";
+                    const res = await fetch(`/api/download?url=${encodeURIComponent(rawUrl)}`);
+                    const data = await res.json();
+
+                    if (data.success && (data.downloadUrl || data.url)) {
+                        streamUrl = data.downloadUrl || data.url;
+                    }
+                } catch (err) {
+                    // Fail silently and handle below
+                }
+            }
+
+            // Trigger download
+            if (streamUrl) {
+                status.textContent = "Starting download...";
+
+                downloadLink.href = streamUrl;
+                resultContainer.classList.remove('hidden');
+
+                // 1-Click Download Trigger
+                const tempLink = document.createElement('a');
+                tempLink.href = streamUrl;
+                tempLink.target = '_blank';
+                tempLink.rel = 'noopener noreferrer';
+                tempLink.setAttribute('download', 'video.mp4');
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                tempLink.remove();
+
+                status.textContent = "Download initiated!";
+            } else {
+                status.textContent = "Unable to fetch video stream. Please try again in a few moments.";
+            }
+
             btn.disabled = false;
             btn.classList.remove('opacity-70', 'cursor-not-allowed');
-            btn.innerHTML = `<i class="fa-solid fa-download text-sm"></i> Download Video`;
+            btn.innerHTML = `<i class="fa-solid fa-download"></i> Download Video`;
         }
     </script>
 </body>
