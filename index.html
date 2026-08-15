@@ -1,107 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ClipVault - Video Downloader</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body {
-      background-color: #f8fafc;
-      background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-                        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClipVault - Video Downloader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8fafc;
+            background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+        }
+    </style>
 </head>
 <body class="min-h-screen text-slate-800 flex items-center justify-center p-4">
 
-  <div class="w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-    <!-- Header -->
-    <div class="text-center space-y-2">
-      <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 mb-2 border border-indigo-100">
-        <i class="fa-solid fa-cloud-arrow-down text-xl"></i>
-      </div>
-      <h1 class="text-2xl font-bold tracking-tight text-slate-900">
-        ClipVault
-      </h1>
-      <p class="text-xs text-slate-500">Paste YouTube or Facebook link below</p>
+    <div class="w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+        <!-- Header -->
+        <div class="text-center space-y-2">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 mb-2 border border-indigo-100">
+                <i class="fa-solid fa-cloud-arrow-down text-xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+                ClipVault
+            </h1>
+            <p class="text-xs text-slate-500">Paste YouTube or Facebook link below</p>
+        </div>
+
+        <!-- Form Section -->
+        <form id="mediaForm" onsubmit="handleDownload(event)" class="space-y-4">
+            <div class="relative">
+                <input type="url"
+                       id="videoUrl"
+                       placeholder="Paste video link here..."
+                       required
+                       class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-4 pr-12 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
+                       oninput="checkPlatform(this.value)" />
+                <div id="badge" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <i class="fa-solid fa-link"></i>
+                </div>
+            </div>
+
+            <!-- Caption Status Message -->
+            <div id="status" class="text-xs text-center min-h-[1rem] text-black font-semibold"></div>
+
+            <!-- Action Button -->
+            <button type="submit"
+                    id="dlBtn"
+                    class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-3.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]">
+                <i class="fa-solid fa-download text-sm"></i>
+                <span>Download Video</span>
+            </button>
+
+            <!-- Save Button Container -->
+            <div id="resultContainer" class="hidden pt-2">
+                <a id="downloadLink"
+                   href="#"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-circle-down text-base"></i>
+                    <span>Save MP4 File</span>
+                </a>
+            </div>
+        </form>
     </div>
 
-    <!-- Form Section -->
-    <form id="downloadForm" onsubmit="handleProcess(event)" class="space-y-4">
-      <div class="relative">
-        <input 
-          type="url" 
-          id="videoUrl" 
-          placeholder="Paste video link here..." 
-          required
-          class="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-4 pr-12 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
-          oninput="checkPlatform(this.value)"
-        />
-        <div id="badge" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-          <i class="fa-solid fa-link"></i>
-        </div>
-      </div>
+    <script>
+        // Paste your Vercel deployment URL here:
+        const VERCEL_BACKEND = "https://YOUR-VERCEL-APP-NAME.vercel.app";
 
-      <!-- Caption Status Message -->
-      <div id="status" class="text-xs text-center min-h-[1rem] text-black font-semibold"></div>
+        function checkPlatform(url) {
+            const badge = document.getElementById('badge');
+            const status = document.getElementById('status');
+            document.getElementById('resultContainer').classList.add('hidden');
 
-      <!-- Action Button -->
-      <button 
-        type="submit" 
-        id="dlBtn"
-        class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-3.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]">
-        <i class="fa-solid fa-download text-sm"></i>
-        <span>Download Video</span>
-      </button>
-    </form>
-  </div>
+            const isYt = /youtube\.com|youtu\.be/.test(url);
+            const isFb = /facebook\.com|fb\.watch/.test(url);
 
-  <script>
-    function checkPlatform(url) {
-      const badge = document.getElementById('badge');
-      const status = document.getElementById('status');
+            if (isYt) {
+                badge.innerHTML = '<i class="fa-brands fa-youtube text-red-500 text-lg"></i>';
+                status.textContent = "YouTube clip detected";
+                status.className = "text-xs text-center text-black font-semibold";
+            } else if (isFb) {
+                badge.innerHTML = '<i class="fa-brands fa-facebook text-blue-600 text-lg"></i>';
+                status.textContent = "Facebook clip detected";
+                status.className = "text-xs text-center text-black font-semibold";
+            } else if (url.trim() === "") {
+                badge.innerHTML = '<i class="fa-solid fa-link"></i>';
+                status.textContent = "";
+            } else {
+                badge.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-500"></i>';
+                status.textContent = "Unrecognized link";
+            }
+        }
 
-      const isYt = /youtube\.com|youtu\.be/.test(url);
-      const isFb = /facebook\.com|fb\.watch/.test(url);
+        async function handleDownload(e) {
+            e.preventDefault();
+            const rawUrl = document.getElementById('videoUrl').value.trim();
+            const status = document.getElementById('status');
+            const btn = document.getElementById('dlBtn');
+            const resultContainer = document.getElementById('resultContainer');
+            const downloadLink = document.getElementById('downloadLink');
 
-      if (isYt) {
-        badge.innerHTML = '<i class="fa-brands fa-youtube text-red-500 text-lg"></i>';
-        status.textContent = "YouTube clip detected";
-        status.className = "text-xs text-center text-black font-semibold";
-      } else if (isFb) {
-        badge.innerHTML = '<i class="fa-brands fa-facebook text-blue-600 text-lg"></i>';
-        status.textContent = "Facebook clip detected";
-        status.className = "text-xs text-center text-black font-semibold";
-      } else if (url.trim() === "") {
-        badge.innerHTML = '<i class="fa-solid fa-link"></i>';
-        status.textContent = "";
-      } else {
-        badge.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-500"></i>';
-        status.textContent = "Unrecognized video link";
-        status.className = "text-xs text-center text-black font-semibold";
-      }
-    }
+            if (!rawUrl) return;
 
-    function handleProcess(e) {
-      e.preventDefault();
-      const rawUrl = document.getElementById('videoUrl').value.trim();
-      const status = document.getElementById('status');
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> Connecting...`;
+            status.textContent = "Processing link via serverless backend...";
+            resultContainer.classList.add('hidden');
 
-      if (!rawUrl) return;
+            try {
+                const res = await fetch(`${VERCEL_BACKEND}/api/download?url=${encodeURIComponent(rawUrl)}`);
+                const data = await res.json();
 
-      status.textContent = "Redirecting to stream generator...";
+                if (data.success && data.downloadUrl) {
+                    status.textContent = "Video stream ready!";
+                    downloadLink.href = data.downloadUrl;
+                    resultContainer.classList.remove('hidden');
+                } else {
+                    status.textContent = data.error || "Failed to process video.";
+                }
+            } catch (err) {
+                status.textContent = "Error connecting to serverless backend.";
+            }
 
-      if (/youtube\.com|youtu\.be/.test(rawUrl)) {
-        // Uses unblocked y2mate processor
-        window.location.href = `https://y2mate.is/en/youtube-downloader.html?url=${encodeURIComponent(rawUrl)}`;
-      } else if (/facebook\.com|fb\.watch/.test(rawUrl)) {
-        window.location.href = `https://fdown.net/download.php?URL=${encodeURIComponent(rawUrl)}`;
-      } else {
-        alert("Please enter a valid YouTube or Facebook URL.");
-      }
-    }
-  </script>
+            btn.disabled = false;
+            btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            btn.innerHTML = `<i class="fa-solid fa-download text-sm"></i> Download Video`;
+        }
+    </script>
 </body>
 </html>
